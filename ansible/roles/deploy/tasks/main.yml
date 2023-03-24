@@ -1,1 +1,57 @@
+---
+- name: Deploy application
+  hosts: app_servers
+  become: true
+
+  vars_files:
+    - vars/main.yml
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Install required packages
+      apt:
+        name: "{{ item }}"
+        state: latest
+      loop:
+        - python3-pip
+        - python3-dev
+        - build-essential
+        - libpq-dev
+
+    - name: Copy application files
+      copy:
+        src: "{{ item }}"
+        dest: "/home/{{ app_user }}/app/{{ item }}"
+      with_items:
+        - "requirements.txt"
+        - "templates/Dockerfile.j2"
+        - "templates/app.py.j2"
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+        mode: "0644"
+      notify: Restart app service
+
+    - name: Install Python requirements
+      pip:
+        requirements: "/home/{{ app_user }}/app/requirements.txt"
+        virtualenv: "/home/{{ app_user }}/env"
+      become_user: "{{ app_user }}"
+
+    - name: Create Docker image
+      docker_image:
+        build:
+          path: "/home/{{ app_user }}/app"
+          dockerfile: "/home/{{ app_user }}/app/Dockerfile"
+          pull: yes
+        name: "{{ app_name }}:{{ app_version }}"
+
+  handlers:
+    - name: Restart app service
+      systemd:
+        name: "{{ app_name }}"
+        state: restarted
 
