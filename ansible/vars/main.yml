@@ -1,1 +1,13 @@
+---
+app_name: myapp
+app_version: 1.0.0
+docker_registry: my-registry.com
+docker_repo: my-registry.com/myapp
+dockerfile_path: /opt/myapp/Dockerfile
+image_tag: "{{ app_version }}-{{ lookup('pipe', 'git rev-parse --short HEAD') }}"
+service_port: 8080
+deployment_replicas: 3
+deployment_namespace: mynamespace
+ingress_host: myapp.com
+ingress_path: /
 
