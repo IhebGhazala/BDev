@@ -1,1 +1,9 @@
+---
+- name: Deploy App
+  hosts: app_servers
+  gather_facts: true
+  become: true
+
+  roles:
+    - deploy
 
